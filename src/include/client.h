@@ -152,8 +152,8 @@ void Decide() {
     }
   }
 
-  // Strategy 3: Pattern-based deduction (subset relations)
-  // For each pair of numbered cells, check if one's unknowns are a subset of another's
+  // Strategy 3: Pattern-based deduction (subset relations) - run multiple times for propagation
+  for (int iteration = 0; iteration < 2; iteration++) {
   for (int i1 = 0; i1 < rows; i1++) {
     for (int j1 = 0; j1 < columns; j1++) {
       if (client_map[i1][j1] < '0' || client_map[i1][j1] > '8') continue;
@@ -253,6 +253,7 @@ void Decide() {
       }
     }
   }
+  }
 
   // Strategy 4: Pick lowest risk cell
   int best_r = -1, best_c = -1;
@@ -291,7 +292,12 @@ void Decide() {
         double risk = (adjacent_nums > 0) ? risk_sum / adjacent_nums : 0.5;
 
         // Prefer cells with more information (adjacent numbered cells)
-        double score = risk - adjacent_nums * 0.01;
+        // Also slightly prefer corners and edges which statistically have fewer mines
+        int edge_bonus = 0;
+        if (i == 0 || i == rows - 1) edge_bonus++;
+        if (j == 0 || j == columns - 1) edge_bonus++;
+
+        double score = risk - adjacent_nums * 0.01 - edge_bonus * 0.005;
 
         if (score < min_risk) {
           min_risk = score;
