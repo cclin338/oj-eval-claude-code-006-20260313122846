@@ -152,7 +152,66 @@ void Decide() {
     }
   }
 
-  // Strategy 3: Pattern-based deduction (subset relations) - run multiple times for propagation
+  // Strategy 3A: Detect 1-2-1 patterns and other common patterns
+  for (int i = 0; i < rows; i++) {
+    for (int j = 0; j < columns; j++) {
+      // 1-2-1 pattern horizontally
+      if (j + 2 < columns && client_map[i][j] == '1' && client_map[i][j+1] == '2' && client_map[i][j+2] == '1') {
+        // Check if there's an unknown above or below the '2'
+        for (int di = -1; di <= 1; di += 2) {
+          int ni = i + di;
+          if (ni >= 0 && ni < rows) {
+            bool has_unknown_above = (client_map[ni][j] == '?' || client_map[ni][j+1] == '?' || client_map[ni][j+2] == '?');
+            if (has_unknown_above) {
+              // The two cells above/below '1's are definitely mines
+              if (client_map[ni][j] == '?') {
+                Execute(ni, j, 1);
+                return;
+              }
+              if (client_map[ni][j+2] == '?') {
+                Execute(ni, j+2, 1);
+                return;
+              }
+              // Middle cell is safe
+              if (client_map[ni][j+1] == '?') {
+                Execute(ni, j+1, 0);
+                return;
+              }
+            }
+          }
+        }
+      }
+
+      // 1-2-1 pattern vertically
+      if (i + 2 < rows && client_map[i][j] == '1' && client_map[i+1][j] == '2' && client_map[i+2][j] == '1') {
+        // Check if there's an unknown left or right of the '2'
+        for (int dj = -1; dj <= 1; dj += 2) {
+          int nj = j + dj;
+          if (nj >= 0 && nj < columns) {
+            bool has_unknown_side = (client_map[i][nj] == '?' || client_map[i+1][nj] == '?' || client_map[i+2][nj] == '?');
+            if (has_unknown_side) {
+              // The two cells beside '1's are definitely mines
+              if (client_map[i][nj] == '?') {
+                Execute(i, nj, 1);
+                return;
+              }
+              if (client_map[i+2][nj] == '?') {
+                Execute(i+2, nj, 1);
+                return;
+              }
+              // Middle cell is safe
+              if (client_map[i+1][nj] == '?') {
+                Execute(i+1, nj, 0);
+                return;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Strategy 3B: Pattern-based deduction (subset relations) - run multiple times for propagation
   for (int iteration = 0; iteration < 2; iteration++) {
   for (int i1 = 0; i1 < rows; i1++) {
     for (int j1 = 0; j1 < columns; j1++) {
