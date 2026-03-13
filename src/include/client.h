@@ -16,7 +16,6 @@ bool is_mine[35][35];        // Known mines
 bool is_safe[35][35];        // Known safe blocks
 int remaining_mines;         // Mines not yet marked
 int total_unknown;           // Unknown blocks remaining
-double prob_mine[35][35];    // Probability of being a mine (for advanced reasoning)
 
 /**
  * @brief The definition of function Execute(int, int, bool)
@@ -255,19 +254,9 @@ void Decide() {
     }
   }
 
-  // Strategy 4: Pick lowest risk cell using probability calculation
+  // Strategy 4: Pick lowest risk cell
   int best_r = -1, best_c = -1;
   double min_risk = 2.0;
-  int max_info = -1;
-
-  // Count marked mines to calculate global probability
-  int marked_count = 0;
-  for (int ii = 0; ii < rows; ii++) {
-    for (int jj = 0; jj < columns; jj++) {
-      if (client_map[ii][jj] == '@') marked_count++;
-    }
-  }
-  double global_prob = (total_unknown > 0) ? (double)(total_mines - marked_count) / total_unknown : 0.0;
 
   for (int i = 0; i < rows; i++) {
     for (int j = 0; j < columns; j++) {
@@ -299,19 +288,13 @@ void Decide() {
           }
         }
 
-        double risk;
-        if (adjacent_nums > 0) {
-          risk = risk_sum / adjacent_nums;
-        } else {
-          // Use global probability for cells far from frontier
-          risk = global_prob;
-        }
+        double risk = (adjacent_nums > 0) ? risk_sum / adjacent_nums : 0.5;
 
-        // Prefer cells with lower risk, break ties with more information
-        if (risk < min_risk - 0.0001 ||
-            (risk < min_risk + 0.0001 && adjacent_nums > max_info)) {
-          min_risk = risk;
-          max_info = adjacent_nums;
+        // Prefer cells with more information (adjacent numbered cells)
+        double score = risk - adjacent_nums * 0.01;
+
+        if (score < min_risk) {
+          min_risk = score;
           best_r = i;
           best_c = j;
         }
